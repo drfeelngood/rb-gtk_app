@@ -6,7 +6,6 @@ class Model < GtkApp::Model
 end
 class Controller < GtkApp::Controller
 
-
   %w[Info Error Warn Ask Wait].each do |dialog|
     on :"btn#{dialog}", 'clicked' do |widget|
       eval("GtkApp::Dialog::#{dialog}").show(@view.main_window, "This is a test", 
@@ -29,11 +28,11 @@ class Controller < GtkApp::Controller
     # end
   end
 
-  on :btnYes, 'clicked' do |widget|
+  on :btnOK, 'clicked' do |widget|
     quit(false)
   end
 
-  on :btnNo, 'clicked' do |widget|
+  on :btnCancel, 'clicked' do |widget|
     quit(false)
   end
 
@@ -46,10 +45,42 @@ class Controller < GtkApp::Controller
       @view.txtView.buffer.format_selection(name.downcase.to_sym)
     end
   end
-  
+
   on :btnClear, 'clicked' do |widget|
     @view.txtView.buffer.clear_selection
   end
+
+  on :btnSpellCheck, 'clicked' do |widget|
+    @view.txtView.buffer.check_spelling
+  end
+  
+  %w[Undo Redo].each do |action|
+    on :"btn#{action}", 'clicked' do |widget|
+      @view.txtView.buffer.send("#{action.downcase}".to_sym)
+    end
+  end
+  
+  on :btnFind, 'clicked' do |widget|
+    find
+  end
+  
+  on :btnFindAndReplace, 'clicked' do |widget|
+    find
+  end
+  
+  private
+  
+    def find
+      search_string = @view.txtSearchString!
+      if search_string.empty?
+        GtkApp::Dialog::Error.show(@view.main_window, "WTF?",
+          "Search string required")
+      else
+        if mark = @view.txtView.buffer.find(search_string)
+          @view.txtView.scroll_mark_onscreen(mark)
+        end
+      end 
+    end
 
 end
 end
