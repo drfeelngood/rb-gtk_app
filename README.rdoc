@@ -1,2 +1,4 @@
-= TODO
+= GtkApp
+
+  A ruby-gtk framework
 
