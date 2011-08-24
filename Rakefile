@@ -1,5 +1,5 @@
-# require 'net/http'
-# require 'uri'
+require 'rake'
+require 'rdoc/task'
 require 'open-uri'
 require File.dirname(__FILE__) + '/lib/gtk_app/version'
 
@@ -30,4 +30,9 @@ namespace :gtk do
     end
   end
 
+end
+
+Rake::RDocTask.new do |rd|
+  rd.main = "README.rdoc"
+  rd.rdoc_files.include("README.rdoc", "lib/**/*.rb")
 end
