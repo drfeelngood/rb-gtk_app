@@ -15,7 +15,8 @@ Gem::Specification.new do |s|
 
   s.add_dependency('pkg-config')
   s.add_dependency('activemodel', '>= 3.0.7')
-  s.add_dependency('dmarkow-raspell')
+  # s.add_dependency('dmarkow-raspell')
+  s.add_dependency('raspell')
   
   s.files = Dir.glob(File.dirname(__FILE__) + '/lib/**/*')
 end
