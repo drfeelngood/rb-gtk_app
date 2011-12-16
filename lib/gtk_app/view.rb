@@ -55,7 +55,7 @@ class View < Gtk::Builder
       else [nil, nil, nil]; end
     end
     
-    class_eval do
+    self.class.class_eval do
       define_method(:"#{widget_name}", lambda { widget })
       define_method(:"#{widget_name}!", bang_proc) if bang_proc
       define_method(:"#{widget_name}=", equal_proc) if equal_proc
