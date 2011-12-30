@@ -1,4 +1,0 @@
-= GtkApp
-
-  A ruby-gtk framework
-
