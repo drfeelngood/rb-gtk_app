@@ -3,6 +3,8 @@ class View < Gtk::Builder
   include GtkApp::Helpers
   include GtkApp::ViewHelpers
 
+  # @param [GtkApp::Controller] controller
+  # @param [String] builder_file Path the Gtk builder file
   def initialize(controller, builder_file, *args)
     super()
     self.add_from_file(builder_file)
@@ -55,7 +57,7 @@ class View < Gtk::Builder
       else [nil, nil, nil]; end
     end
     
-    self.class.class_eval do
+    class_eval do
       define_method(:"#{widget_name}", lambda { widget })
       define_method(:"#{widget_name}!", bang_proc) if bang_proc
       define_method(:"#{widget_name}=", equal_proc) if equal_proc
