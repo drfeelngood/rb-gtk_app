@@ -9,6 +9,10 @@ module SignalSupport
   module ClassMethods
     attr_reader :signal_connections
 
+    # @param [Symbol] widget_name
+    # @param [String] signal_name
+    # @param [Symbol] receiver_method
+    # @yield [...]
     def on(widget_name, signal_name, receiver_method=nil, &block)
 
       sc = SignalConnection.new do
