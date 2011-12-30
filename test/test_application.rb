@@ -92,22 +92,23 @@ begin
   TestApplication::Controller.new do
     @view  = GtkApp::View.new(self, "#{File.expand_path('../', __FILE__)}/test.ui")
     @model = TestApplication::Model.new
-    # formatter = lambda do |col, renderer, model, iter|
-    #   unless renderer.is_a?(Gtk::CellRendererToggle)
-    #     renderer.foreground = (iter[2] ? 'blue' : 'red')
-    #   end
-    # end
 
-    # @view.build_listview(:listviewTest, 
-    #     { :id => Integer, :todo => String, :complete? => TrueClass }, 
-    #     :formatter => formatter) do |index, header, column, renderer|
-    #   
-    #   column.expand = true if index == 1
-    # end
-    # 
-    # (1..5).each_with_index do |v, i|
-    #   @view.listviewTest << [i, "Todo ##{i}", false]
-    # end
+    formatter = lambda do |col, renderer, model, iter|
+      unless renderer.is_a?(Gtk::CellRendererToggle)
+        renderer.foreground = (iter[2] ? 'blue' : 'red')
+      end
+    end
+
+    @view.build_listview(:listviewTest, { 
+                         id: Integer, todo: String, complete?: TrueClass }, 
+                      formatter: formatter) do |index, header, column, renderer|
+
+      column.expand = true if index == 1
+    end
+
+    (1..5).each_with_index do |v, i|
+      @view.listviewTest << [i, "Todo ##{i}", false]
+    end
     
     fancy_buffer = GtkApp::TextBuffer.new
     fancy_buffer.text = File.read(File.dirname(__FILE__) + '/test.txt')
