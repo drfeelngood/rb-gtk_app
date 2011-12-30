@@ -1,5 +1,6 @@
 *.gem
 *.xpm
 *.gz
-html
+.rvmrc
+doc
 ruby-gtk2-1.0.0
