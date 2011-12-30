@@ -1,3 +1,3 @@
 # GtkApp
 
-    A ruby-gtk2 MVC framework
+A ruby-gtk2 MVC framework
