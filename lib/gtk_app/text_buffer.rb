@@ -85,13 +85,17 @@ class TextBuffer < Gtk::TextBuffer
   # Locate text in selection or the entire buffer.  If found, a 
   # Gtk::TextMark[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextMark]
   # is returned.  Else, nil.
+  # @param [String] string Text to search.
   def find(string)
     s_iter, e_iter, text_selected = selection_bounds
     s_iter = start_iter unless text_selected
     s_iter, e_iter = s_iter.forward_search(string, Gtk::TextIter::SEARCH_TEXT_ONLY, e_iter)
     s_iter ? create_mark(nil, s_iter, false) : nil
   end
-  
+
+  # @param [String] string Text to replace the selection with.
+  # @param [Gtk::TextIter] s_iter
+  # @param [Gtk::TextIter] e_iter
   def replace(string, s_iter, e_iter)
     begin_user_action
     delete(s_iter, e_iter)
@@ -103,6 +107,7 @@ class TextBuffer < Gtk::TextBuffer
   # Format text in the current selection range with a 
   # Gtk::TextTag[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextTag] 
   # identified by the given name.
+  # @param [String] tag_name
   def format_selection(tag_name)
     s_iter, e_iter, text_selected = selection_bounds
     format(tag_name, s_iter, e_iter) if text_selected
@@ -111,6 +116,9 @@ class TextBuffer < Gtk::TextBuffer
   # This is a small wrapper around the 
   # Gtk::TextBuffer#apply_tag[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextBuffer#apply_tag] 
   # method.  It  allows the Gtk::TextTag name to be passed as a symbol.
+  # @param [] tag_name
+  # @param [Gtk::TextIter] s_iter
+  # @param [Gtk::TextIter] e_iter
   def format(tag_name, s_iter, e_iter)
     apply_tag(tag_name.to_s, s_iter, e_iter)
   end
@@ -132,6 +140,9 @@ class TextBuffer < Gtk::TextBuffer
   # Remove all tags of a given name from from one
   # Gtk::TextIter[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextIter] 
   # to another.
+  # @param [] tag_name
+  # @param [Gtk::TextIter] s_iter
+  # @param [Gtk::TextIter] e_iter
   def clear(tag_name, s_iter, e_iter)
     remove_tag(tag_name.to_s, s_iter, e_iter)
   end
@@ -139,6 +150,8 @@ class TextBuffer < Gtk::TextBuffer
   # Remove all Gtk::TextTag's from one 
   # Gtk::TextIter[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextIter] 
   # to another.
+  # @param [Gtk::TextIter] s_iter
+  # @param [Gtk::TextIter] e_iter
   def clear_all(s_iter, e_iter)
     remove_all_tags(s_iter, e_iter)
   end
