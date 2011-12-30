@@ -17,19 +17,22 @@ module GtkApp
   def self.run
     Gtk::main
   end
-  
+
   def self.quit
     Gtk::main_quit
   end
-  
+
   def self.refresh
     Gtk::main_iteration_do(false) while Gtk::events_pending?
   end
 
+  # @param [Fixnum] time_in_milliseconds
+  # @param [Object] controller
+  # @param [String] callback
   def self.add_timeout(time_in_milliseconds, controller, callback)
     GLib::Timeout.add(time_in_milliseconds){ controller.method(:"#{callback}") }
   end
 
 end
 
-require 'gtk_app/dialog'
+# require 'gtk_app/dialog'
