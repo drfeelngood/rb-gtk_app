@@ -14,21 +14,26 @@ module GtkApp
   autoload :Observer,      "#{lib}/gtk_app/observer"
   autoload :Version,       "#{lib}/gtk_app/version"
 
+  # Start the main Gtk loop.
   def self.run
     Gtk::main
   end
 
+  # Stop the main Gtk loop.
   def self.quit
     Gtk::main_quit
   end
 
+  # Run a single iteration of the main loop while there are pending events 
+  # without blocking.
   def self.refresh
     Gtk::main_iteration_do(false) while Gtk::events_pending?
   end
 
-  # @param [Fixnum] time_in_milliseconds
-  # @param [Object] controller
-  # @param [String] callback
+  # Establish a controller method to be invoked at regular intervals.
+  # @param [Fixnum] time_in_milliseconds Time between calls to the receiver method.
+  # @param [Object] controller The class in which the method exists.
+  # @param [String] callback  Receiver method name.
   def self.add_timeout(time_in_milliseconds, controller, callback)
     GLib::Timeout.add(time_in_milliseconds){ controller.method(:"#{callback}") }
   end
