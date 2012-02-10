@@ -7,10 +7,13 @@ class View < Gtk::Builder
   # @param [String] builder_file Path the Gtk builder file
   def initialize(controller, builder_file, *args)
     super()
+    # options = args.extract_options!
     self.add_from_file(builder_file)
     self.connect_signals { |handler| controller.method(handler) }
+
+    # self.title = options[:title] if options.key?(:title)
   end
-  
+
   def method_missing(id, *args, &block)
     method_name = id.to_s
 
@@ -46,7 +49,11 @@ class View < Gtk::Builder
         nil,
         lambda do |row|
           iter = widget.model.append
-          row.each_with_index { |v,i| iter[i] = v }
+          if row.is_a?(Gtk::TreeIter)
+            (0..model.n_columns).each { |i| iter[i] = row[i] }
+          else
+            row.each_with_index { |v,i| iter[i] = v }
+          end
           iter
         end ]
     else
@@ -56,13 +63,13 @@ class View < Gtk::Builder
           lambda { |text| widget.text = ("#{widget.text}" << text) } ]
       else [nil, nil, nil]; end
     end
-    
+
     class_eval do
       define_method(:"#{widget_name}", lambda { widget })
       define_method(:"#{widget_name}!", bang_proc) if bang_proc
       define_method(:"#{widget_name}=", equal_proc) if equal_proc
     end
-    
+
     widget.class_eval do
       define_method("<<", append_proc)
     end if append_proc
