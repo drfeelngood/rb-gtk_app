@@ -2,5 +2,5 @@
 *.xpm
 *.gz
 .rvmrc
-doc
+.yardoc
 ruby-gtk2-1.0.0
