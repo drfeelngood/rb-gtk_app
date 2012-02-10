@@ -113,7 +113,7 @@ begin
     fancy_buffer = GtkApp::TextBuffer.new
     fancy_buffer.text = File.read(File.dirname(__FILE__) + '/test.txt')
     @view.txtView.buffer = fancy_buffer
-    
+    GtkApp::Drawer.new(@view.main_window, GtkApp::View.new(self, "./drawer.ui"))
   end
   
   GtkApp.run

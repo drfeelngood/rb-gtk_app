@@ -12,6 +12,7 @@ module GtkApp
   autoload :SignalSupport, "#{lib}/gtk_app/signal_support"
   autoload :TextBuffer,    "#{lib}/gtk_app/text_buffer"
   autoload :Observer,      "#{lib}/gtk_app/observer"
+  autoload :Drawer,        "#{lib}/gtk_app/drawer"
   autoload :Version,       "#{lib}/gtk_app/version"
 
   # Start the main Gtk loop.
