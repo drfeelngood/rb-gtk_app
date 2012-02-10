@@ -1,6 +1,7 @@
 module GtkApp
 module ViewHelpers
 
+  # Simple way to setup a listview.
   # @param [Symbol] Widget name
   # @param [Hash]   
   # @param [Hash] options
@@ -11,6 +12,10 @@ module ViewHelpers
   # @yieldparam [String] header Column header text
   # @yieldparam [Gtk::TreeViewColumn] column The current column
   # @yieldparam [Gtk::CellRenderer]  renderer Current column cell renderer
+  # @raise [ExceptionClass] If an unhandled column data type is provided, an 
+  #   exception is raised.
+  # @example Build a simple listview.
+  #   @view.build_listview(:listThings, {id: Integer, name: String})
   def build_listview(widget_name, columns, options={}, &block)
     list = self.send(:"#{widget_name}")
     list.model = Gtk::ListStore.new(*columns.values)
@@ -18,22 +23,21 @@ module ViewHelpers
       header, data_type = keyval
       renderer, attrs = case "#{data_type}".to_sym
       when :String, :Integer
-        [Gtk::CellRendererText.new, :text => index]
+        [Gtk::CellRendererText.new, text: index]
       when :TrueClass
         toggle = Gtk::CellRendererToggle.new
         toggle.signal_connect('toggled') do |widget, path|
           iter = list.model.get_iter(path)
           iter[index] = !iter[index]
         end
-        [toggle, :active => index]
+        [toggle, active: index]
       when :'Gtk::ListStore'
         _renderer = Gtk::CellRendererCombo.new
         model = Gtk::ListStore.new(String)
         _renderer.signal_connect("edited") do |cell, path, text|
           model.get_iter(path)[index] = text
         end
-        [_renderer, :text_column => 0, :model => model, :text => index, 
-          :editable => index]
+        [_renderer, text_column: 0, model: model, text: index, editable: index]
       else
         raise("GtkApp::View##{__method__} does not know how to handle " + 
           "'#{data_type}' data types.")
@@ -64,6 +68,7 @@ module ViewHelpers
   def desensitize(*widgets)
     widgets.each { |w| self["#{w}"].sensitive = false }
   end
+
   
 end
 end
