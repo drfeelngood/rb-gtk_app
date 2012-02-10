@@ -52,11 +52,15 @@ class TextBuffer < Gtk::TextBuffer
       place_cursor(s_iter)
     end
   end
-  
+
+  # Retrieve the word at the current cursor position
+  # @return [String] The word.
   def word_at_cursor
     get_text(*word_bounds).strip
   end
 
+  # Determine the boudaries of the word at the current cursor position.
+  # @return [Array] The start and end iter.
   def word_bounds
     iter = get_iter_at_offset(cursor_position)
     s_iter, e_iter = iter.clone, iter.clone
@@ -74,7 +78,7 @@ class TextBuffer < Gtk::TextBuffer
       format(:spell_error, s, e)
     end
   end
-  
+
   # Does the 
   # Gtk::TextTagTable[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextTagTable] 
   # contain any 'spell_error' tags?
