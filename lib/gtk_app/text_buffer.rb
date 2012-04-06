@@ -70,15 +70,19 @@ class TextBuffer < Gtk::TextBuffer
     [s_iter, e_iter]
   end
 
-  def check_spelling(word=nil, s_iter=nil, e_iter=nil)
+  def check_spelling(single_word=false, word=nil)
+    if single_word
+      pos = self.cursor_position-2
+      while self.text[pos] != ' '
+        word = "#{self.text[pos]}#{word}"
+        pos -= 1
+      end
+    end
     if word.nil?
-      text.gsub(/[\w\']+/) do |w| check_spelling(w); end
-    elsif !@spell_check.check(word)
-      s, e = start_iter.forward_search(word, Gtk::TextIter::SEARCH_TEXT_ONLY, nil)
-      format(:spell_error,s,e)
+      text.gsub(/[\w\']+/) do |w| check_spelling(false,w); end
     else
       s, e = start_iter.forward_search(word, Gtk::TextIter::SEARCH_TEXT_ONLY, nil)
-      unformat(:spell_error, s, e)
+      !@spell_check.check(word) ? format(:spell_error,s,e) : clear(:spell_error, s, e)
     end
   end
 
@@ -128,10 +132,6 @@ class TextBuffer < Gtk::TextBuffer
   # @param [Gtk::TextIter] e_iter
   def format(tag_name, s_iter, e_iter)
     apply_tag(tag_name.to_s, s_iter, e_iter)
-  end
-
-  def unformat(tag_name, s_iter, e_iter)
-    remove_tag(tag_name.to_s, s_iter, e_iter)
   end
 
   # Remove all occurrences of a 
@@ -188,6 +188,8 @@ class TextBuffer < Gtk::TextBuffer
     def setup_signals
       signal_connect('begin-user-action') { |me| @user_action = true  }
       signal_connect('end-user-action')   { |me| @user_action = false }
+      signal_connect('changed')           { |me| check_spelling(true) if text[cursor_position-1] == ' '}
+      signal_connect('paste-done')        { |me| check_spelling }
       
       signal_connect('insert-text') do |me, iter, text, len|
         if user_action?
@@ -203,6 +205,13 @@ class TextBuffer < Gtk::TextBuffer
           @undo_stack << [:delete, s_iter.offset, e_iter.offset, text]
         end
       end
+
+      # TODO: Figure a way to make suggestions for misspelled words
+      #speller = Aspell.new('en_US')
+      #speller.suggestion_mode = Aspell::NORMAL
+      #speller.suggest(word)[0..5].each do |suggestion|
+        #puts suggestion
+      #end
 
       # TODO: Add suggestion popups for spelling erros.
       # tag_table.lookup('spell_error').signal_connect('event') do |tag|
