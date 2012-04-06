@@ -75,7 +75,10 @@ class TextBuffer < Gtk::TextBuffer
       text.gsub(/[\w\']+/) do |w| check_spelling(w); end
     elsif !@spell_check.check(word)
       s, e = start_iter.forward_search(word, Gtk::TextIter::SEARCH_TEXT_ONLY, nil)
-      format(:spell_error, s, e)
+      format(:spell_error,s,e)
+    else
+      s, e = start_iter.forward_search(word, Gtk::TextIter::SEARCH_TEXT_ONLY, nil)
+      unformat(:spell_error, s, e)
     end
   end
 
@@ -126,7 +129,11 @@ class TextBuffer < Gtk::TextBuffer
   def format(tag_name, s_iter, e_iter)
     apply_tag(tag_name.to_s, s_iter, e_iter)
   end
-  
+
+  def unformat(tag_name, s_iter, e_iter)
+    remove_tag(tag_name.to_s, s_iter, e_iter)
+  end
+
   # Remove all occurrences of a 
   # Gtk::TextTag[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextTag] 
   # in the given selection range.
