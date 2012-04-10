@@ -94,11 +94,12 @@ class TextBuffer < Gtk::TextBuffer
       end
     end
 
-    cursor = get_iter_at_offset(cursor_position)
-    precursor = cursor.clone
-    precursor.backward_char
-    tag = tag_table.lookup('spell_error')
-    has_error = cursor.has_tag?(tag) || precursor.has_tag?(tag)
+    #cursor = get_iter_at_offset(cursor_position)
+    #precursor = cursor.clone
+    #precursor.backward_char
+    #tag = tag_table.lookup('spell_error')
+    #has_error = cursor.has_tag?(tag) || precursor.has_tag?(tag) #error!
+    #puts has_error
 
     unformat(:spell_error, s_iter, e_iter)
 
@@ -108,10 +109,13 @@ class TextBuffer < Gtk::TextBuffer
       word_end.forward_word_end
 
       word = get_text(word_start, word_end)
-      if !has_error && word =~ /[A-Za-z]/ && !@spell_check.check(word)
-        # puts "[#{word}]"
+      print word
+      if word =~ /[A-Za-z]/ && !@spell_check.check(word)
+         #print "...[#{word}]"
         format(:spell_error, word_start, word_end)
       end
+
+      #puts
 
       # => meow point to the beginning of the next word.
       word_end.forward_word_end
