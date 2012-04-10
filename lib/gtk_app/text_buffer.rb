@@ -2,8 +2,17 @@ require 'raspell'
 
 module GtkApp
 class TextBuffer < Gtk::TextBuffer
-  attr_reader :spell_check
-  attr_reader :undo_stack, :redo_stack
+
+  # @attr_accessor [Aspell] spell_check
+  attr_accessor:spell_check
+  # @attr_accessor [Array] undo_stack
+  attr_accessor:undo_stack
+  # @attr_accessor [Array] redo_stack
+  attr_accessor:redo_stack
+  # @attr_accessor [Gtk::TextMark] insert_start
+  attr_accessor:insert_start
+  # @attr_accessor [Gtk::TextMark] insert_end
+  attr_accessor:insert_end
 
   DEFAULT_LANG = "en_US"
   DEFAULT_TAGS = %w[bold italic strikethrough underline error spell_error]
@@ -13,6 +22,7 @@ class TextBuffer < Gtk::TextBuffer
     @undo_stack, @redo_stack = [], []
     @spell_check = Aspell.new(options[:lang] || DEFAULT_LANG)
     setup_default_tags
+    setup_spell_check_marks
     setup_signals
   end
 
@@ -70,12 +80,50 @@ class TextBuffer < Gtk::TextBuffer
     [s_iter, e_iter]
   end
 
-  def check_spelling(word=nil, s_iter=nil, e_iter=nil)
-    if word.nil?
-      text.gsub(/[\w\']+/) do |w| check_spelling(w); end
-    elsif !@spell_check.check(word)
-      s, e = start_iter.forward_search(word, Gtk::TextIter::SEARCH_TEXT_ONLY, nil)
-      format(:spell_error, s, e)
+  def check_spelling(s_iter=nil, e_iter=nil)
+    s_iter = bounds.first if s_iter.nil?
+    e_iter = bounds.last  if e_iter.nil?
+
+    e_iter.forward_word_end if e_iter.inside_word?
+
+    unless s_iter.starts_word?
+      if s_iter.inside_word? || s_iter.ends_word?
+        s_iter.backward_word_start
+      elsif s_iter.forward_word_end
+        s_iter.backward_word_start
+      end
+    end
+
+    #cursor = get_iter_at_offset(cursor_position)
+    #precursor = cursor.clone
+    #precursor.backward_char
+    #tag = tag_table.lookup('spell_error')
+    #has_error = cursor.has_tag?(tag) || precursor.has_tag?(tag) #error!
+    #puts has_error
+
+    unformat(:spell_error, s_iter, e_iter)
+
+    word_start = s_iter.clone
+    while (word_start <=> e_iter) < 0 do
+      word_end = word_start.clone
+      word_end.forward_word_end
+
+      word = get_text(word_start, word_end)
+      print word
+      if word =~ /[A-Za-z]/ && !@spell_check.check(word)
+         #print "...[#{word}]"
+        format(:spell_error, word_start, word_end)
+      end
+
+      #puts
+
+      # => meow point to the beginning of the next word.
+      word_end.forward_word_end
+      word_end.backward_word_start
+
+      break if word_start == word_end
+
+      word_start = word_end.clone
     end
   end
 
@@ -126,20 +174,6 @@ class TextBuffer < Gtk::TextBuffer
   def format(tag_name, s_iter, e_iter)
     apply_tag(tag_name.to_s, s_iter, e_iter)
   end
-  
-  # Remove all occurrences of a 
-  # Gtk::TextTag[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextTag] 
-  # in the given selection range.
-  def clear_selection(*tag_names)
-    s_iter, e_iter, text_selected = selection_bounds
-    if text_selected
-      if tag_names.empty?
-        clear_all(s_iter, e_iter)
-      else
-        tag_names.each { |tag_name| clear(tag_name, s_iter, e_iter) }
-      end
-    end
-  end
 
   # Remove all tags of a given name from from one
   # Gtk::TextIter[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextIter] 
@@ -147,8 +181,22 @@ class TextBuffer < Gtk::TextBuffer
   # @param [] tag_name
   # @param [Gtk::TextIter] s_iter
   # @param [Gtk::TextIter] e_iter
-  def clear(tag_name, s_iter, e_iter)
+  def unformat(tag_name, s_iter, e_iter)
     remove_tag(tag_name.to_s, s_iter, e_iter)
+  end
+
+  # Remove all occurrences of a 
+  # Gtk::TextTag[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextTag] 
+  # in the given selection range.
+  def unformat_selection(*tag_names)
+    s_iter, e_iter, text_selected = selection_bounds
+    if text_selected
+      if tag_names.empty?
+        clear_all(s_iter, e_iter)
+      else
+        tag_names.each { |tag_name| unformat(tag_name, s_iter, e_iter) }
+      end
+    end
   end
 
   # Remove all Gtk::TextTag's from one 
@@ -156,7 +204,7 @@ class TextBuffer < Gtk::TextBuffer
   # to another.
   # @param [Gtk::TextIter] s_iter
   # @param [Gtk::TextIter] e_iter
-  def clear_all(s_iter, e_iter)
+  def unformat_all(s_iter, e_iter)
     remove_all_tags(s_iter, e_iter)
   end
 
@@ -177,31 +225,49 @@ class TextBuffer < Gtk::TextBuffer
       end
     end
 
+    def setup_spell_check_marks
+      s_iter, e_iter = bounds
+      @insert_start = create_mark('insert-start', s_iter, true)
+      @insert_end   = create_mark('insert-end',   s_iter, true)
+    end
+
     # Establish base signal handlers.  Here we track user actions and...
     def setup_signals
       signal_connect('begin-user-action') { |me| @user_action = true  }
       signal_connect('end-user-action')   { |me| @user_action = false }
-      
+
       signal_connect('insert-text') do |me, iter, text, len|
         if user_action?
-          @undo_stack << [:insert, iter.offset, 
-            (iter.offset + text.scan(/./).size), text]
-          @redo_stack.clear
+          me.undo_stack << [ :insert, iter.offset, 
+                           (iter.offset + text.scan(/./).size), text ]
+          me.redo_stack.clear
         end
+        me.move_mark(me.insert_start, iter)
       end
-      
+
+      signal_connect_after('insert-text') do |me, iter, text, len|
+        s_iter = me.get_iter_at_mark(me.insert_start)
+        me.check_spelling(s_iter, iter)
+        me.insert_end = iter
+      end
+
       signal_connect('delete-range') do |me, s_iter, e_iter|
         if user_action?
-          text = get_text(s_iter, e_iter)
-          @undo_stack << [:delete, s_iter.offset, e_iter.offset, text]
+          me.undo_stack << [ :delete, s_iter.offset, e_iter.offset, text, 
+                             me.get_text(s_iter, e_iter) ]
         end
+      end
+
+      signal_connect_after('delete-range') do |me, s_iter, e_iter|
+        me.check_spelling(s_iter, e_iter)
       end
 
       # TODO: Add suggestion popups for spelling erros.
       # tag_table.lookup('spell_error').signal_connect('event') do |tag|
+      #   p tag
       # end
     end
-    
+
     def user_action?
       @user_action
     end
