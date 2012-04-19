@@ -5,7 +5,6 @@ module TextEditSupport
 
   def self.included(base)
     base.send(:include, InstanceMethods)
-    #base.setup_signals
   end
 
   module InstanceMethods
@@ -19,7 +18,6 @@ module TextEditSupport
     end
 
     def setup_signals
-
       signal_connect('button-press-event') do |me, event|
         if event.button == 3
           menu = Gtk::Menu.new
@@ -33,38 +31,10 @@ module TextEditSupport
         end
       end
 
+      #app seg faults without the menu destroying properly. This still doesn't work.
       signal_connect('destroy-event') do |me|
         menu.destroy
-
       end
-
-      #signal_connect('populate-popup') do |me, menu|
-      #  @spell_check = Aspell.new(DEFAULT_LANG)
-      #  curr_iter = me.buffer.get_iter_at_offset(me.buffer.cursor_position)
-      #  curr_iter.tags.each do |tag|
-      #    if tag.name == 'spell_error'
-      #      curr_iter.forward_word_end
-      #      end_iter = curr_iter.clone
-      #      curr_iter.backward_word_start
-      #      old_word = buffer.get_text(curr_iter, end_iter)
-      #      puts "[#{word=curr_iter.get_text(end_iter)}]"
-      #      @spell_check.suggest(word)[0...5].each do |word|
-      #        puts "suggested word change is: #{word}"
-      #        menu.append(sub=Gtk::MenuItem.new("#{word}"))
-      #        sub.signal_connect('activate') do |widget|
-      #          new_word = widget.label
-      #          buffer.begin_user_action do 
-      #            buffer.delete(curr_iter, end_iter)
-      #            buffer.insert(curr_iter, new_word)
-      #          end
-      #        end
-      #      end
-      #    end
-      #  end
-
-      #  menu.show_all
-      #end
-
     end
 
     def populate_menu(menu, mark_click)
@@ -104,6 +74,5 @@ module TextEditSupport
     end
 
   end
-
 end
 end
