@@ -11,6 +11,16 @@ class View < Gtk::Builder
     self.add_from_file(builder_file)
     self.connect_signals { |handler| controller.method(handler) }
 
+    self.objects.each do |widget|
+      p widget.class
+      mixin = case widget
+      when Gtk::TextView then GtkApp::TextEditSupport 
+      else nil
+      end
+      widget.class.send(:include, mixin) unless mixin.nil?
+      puts widget.buffer if widget.is_a? Gtk::TextView
+    end
+
     # self.title = options[:title] if options.key?(:title)
   end
 

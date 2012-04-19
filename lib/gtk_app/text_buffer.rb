@@ -19,6 +19,12 @@ class TextBuffer < Gtk::TextBuffer
 
   def initialize(tag_table=nil, options={})
     super(tag_table)
+    #@menu = Gtk::Menu.new
+    #@menu.append(Gtk::MenuItem.new("Word1"))
+    #@menu.append(Gtk::MenuItem.new("Word1"))
+    #@menu.show_all
+
+    #add_events(Gdk::Event::BUTTON_PRESS_MASK)
     @undo_stack, @redo_stack = [], []
     @spell_check = Aspell.new(options[:lang] || DEFAULT_LANG)
     setup_default_tags
@@ -179,7 +185,7 @@ class TextBuffer < Gtk::TextBuffer
   # Gtk::TextIter[http://ruby-gnome2.sourceforge.jp/hiki.cgi?Gtk%3A%3ATextIter] 
   # to another.
   # @param [] tag_name
-  # @param [Gtk::TextIter] s_iter
+
   # @param [Gtk::TextIter] e_iter
   def unformat(tag_name, s_iter, e_iter)
     remove_tag(tag_name.to_s, s_iter, e_iter)
@@ -212,8 +218,7 @@ class TextBuffer < Gtk::TextBuffer
 
     # Establish default tag names for everyday text formatting.
     def setup_default_tags
-      DEFAULT_TAGS.each do |name|
-        attibs = case name
+      DEFAULT_TAGS.each do |name| attibs = case name
         when 'bold'          then { weight: Pango::WEIGHT_BOLD }
         when 'italic'        then { style: Pango::STYLE_ITALIC }
         when 'strikethrough' then { strikethrough: true }
@@ -261,6 +266,10 @@ class TextBuffer < Gtk::TextBuffer
       signal_connect_after('delete-range') do |me, s_iter, e_iter|
         me.check_spelling(s_iter, e_iter)
       end
+      #signal_connect('button_press_event') do |widget, event|
+        #menu.popup(nil, nil, event.button, event.time) if event.button == 2
+      #end
+
 
       # TODO: Add suggestion popups for spelling erros.
       # tag_table.lookup('spell_error').signal_connect('event') do |tag|

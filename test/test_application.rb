@@ -88,6 +88,7 @@ end
 #
 # Main
 #
+
 begin
   TestApplication::Controller.new do
     @view  = GtkApp::View.new(self, "#{File.expand_path('../', __FILE__)}/test.ui")
@@ -113,6 +114,7 @@ begin
     fancy_buffer = GtkApp::TextBuffer.new
     fancy_buffer.text = File.read(File.dirname(__FILE__) + '/test.txt')
     @view.txtView.buffer = fancy_buffer
+    @view.txtView.setup_signals
     GtkApp::Drawer.new(@view.main_window, GtkApp::View.new(self, "./drawer.ui"))
   end
   

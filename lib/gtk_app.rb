@@ -14,6 +14,8 @@ module GtkApp
   autoload :Observer,      "#{lib}/gtk_app/observer"
   autoload :Drawer,        "#{lib}/gtk_app/drawer"
   autoload :Version,       "#{lib}/gtk_app/version"
+  autoload :TextEditSupport, "#{lib}/gtk_app/text_edit_support"
+  #autoload :TextView,      "#{lib}/gtk_app/text_view"
 
   # Start the main Gtk loop.
   def self.run
