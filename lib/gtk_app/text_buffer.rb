@@ -258,7 +258,7 @@ class TextBuffer < Gtk::TextBuffer
 
       signal_connect('delete-range') do |me, s_iter, e_iter|
         if user_action?
-          me.undo_stack << [ :delete, s_iter.offset, e_iter.offset, text, 
+          me.undo_stack << [ :delete, s_iter.offset, e_iter.offset,
                              me.get_text(s_iter, e_iter) ]
         end
       end

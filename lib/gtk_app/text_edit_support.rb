@@ -63,10 +63,7 @@ module TextEditSupport
           menu.append(sub=Gtk::MenuItem.new("#{word}"))
           sub.signal_connect('activate') do |widget|
             new_word = widget.label
-            buffer.begin_user_action do 
-              buffer.delete(iters[0], iters[1])
-              buffer.insert(iters[0], new_word)
-            end
+            buffer.replace(new_word, iters[0], iters[1])
           end
         end
       end
