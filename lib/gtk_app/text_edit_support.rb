@@ -18,8 +18,7 @@ module TextEditSupport
     end
 
     def setup_signals
-      window = Gtk::Window.new(Gtk::Window::TOPLEVEL)
-      window.add_events(Gdk::Event::BUTTON_PRESS_MASK)
+      menu = Gtk::Menu.new
       signal_connect('button-press-event') do |me, event|
         if event.button == 3
           menu = Gtk::Menu.new
@@ -46,10 +45,9 @@ module TextEditSupport
       end
 
       #app seg faults without the menu destroying properly. This still doesn't work.
-      window.signal_connect('destroy-event') do |me|
-        puts "hit destroy signal"
+      signal_connect('destroy') do |me|
+        puts "hit the destroy signal"
         menu.destroy
-        Gtk.main_quit
       end
     end
 
