@@ -18,6 +18,8 @@ module TextEditSupport
     end
 
     def setup_signals
+      window = Gtk::Window.new(Gtk::Window::TOPLEVEL)
+      window.add_events(Gdk::Event::BUTTON_PRESS_MASK)
       signal_connect('button-press-event') do |me, event|
         if event.button == 3
           menu = Gtk::Menu.new
@@ -26,20 +28,29 @@ module TextEditSupport
           puts "#{coords[0]} #{coords[1]}"
           click_iter = get_iter_at_location(coords[0], coords[1])
           mark_click = buffer.create_mark('mark_click', click_iter, false)
-          populate_menu(menu, mark_click)
-          menu.popup(nil, nil, event.button, event.time)
         end
+         false #let gtk process this event, too. we don't want to eat any events
+      end
+
+      signal_connect('populate_popup') do |me, p_menu|
+        puts "called the populate popup signal"
+        spell_menu_item = Gtk::MenuItem.new("Spelling Suggestions")
+        menu = Gtk::Menu.new
+        mark_click = me.buffer.get_mark('mark_click')
+        iters = get_word_iters(mark_click)
+        get_suggestions_menu(menu, iters)
+        spell_menu_item.set_submenu(menu)
+        p_menu.insert(spell_menu_item, 0)
+        p_menu.show_all
+        false
       end
 
       #app seg faults without the menu destroying properly. This still doesn't work.
-      signal_connect('destroy-event') do |me|
+      window.signal_connect('destroy-event') do |me|
+        puts "hit destroy signal"
         menu.destroy
+        Gtk.main_quit
       end
-    end
-
-    def populate_menu(menu, mark_click)
-      iters = get_word_iters(mark_click)
-      get_suggestions_menu(menu, iters)
     end
 
     def get_word_iters(mark_click)
