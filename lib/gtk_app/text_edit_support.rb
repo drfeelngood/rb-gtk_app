@@ -19,6 +19,9 @@ module TextEditSupport
 
     # sets up the signals like a boss
     def setup_signals
+      #Set up instance var here, in case initialize isn't called
+      @spell_check = Aspell.new(DEFAULT_LANG)
+
       signal_connect('button-press-event') do |me, event|
         if event.button == 3
           coords = window_to_buffer_coords(get_window_type(event.window), event.x, event.y)
@@ -55,13 +58,12 @@ module TextEditSupport
     # @param iters [Array of Gtk::TextIters] contains start and end iters of word
     # @return void - just adds the suggestions to the menu
     def add_suggestions_to_menu(menu, iters)
-      @spell_check = Aspell.new(DEFAULT_LANG)
       word = buffer.get_text(iters[0], iters[1])
       suggestions = @spell_check.suggest(word)[0...5]
-      if suggestions.nil?
-        label = Gtk::Label.new
-        label.set_markup("<i>(no suggestions)</i>")
-        menu.append(Gtk::MenuItem.new(label))
+      if suggestions.empty? || suggestions.nil?
+        menu_item = Gtk::MenuItem.new("No Suggestions")
+        menu_item.sensitive = false
+        menu.append(menu_item)
       else
         suggestions.each do |word|
           menu.append(sub=Gtk::MenuItem.new("#{word}"))
