@@ -14,8 +14,10 @@ Gem::Specification.new do |s|
   s.has_rdoc    = true
 
   s.add_dependency('pkg-config')
+  s.add_dependency('gtk2')
   s.add_dependency('activemodel', '>= 3.0.7')
-  s.add_dependency('raspell')
+  #s.add_dependency('raspell')
+  s.add_dependency('ffi-aspell')
 
   s.add_development_dependency('yard')
 
