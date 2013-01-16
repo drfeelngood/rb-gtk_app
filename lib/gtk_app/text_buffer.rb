@@ -1,9 +1,27 @@
-require 'raspell'
+require 'ffi/aspell'
 
 module GtkApp
 class TextBuffer < Gtk::TextBuffer
+ 
+  # !@attribute [r] spell_check
+  # Aspell object
+  # @return [FFI::Aspell::Speller]
   attr_reader :spell_check
-  attr_reader :undo_stack, :redo_stack
+
+  # !@attribute [r] undo_stack
+  # Collection of actions performed
+  # @return [Array]
+  attr_reader :undo_stack 
+    
+  # !@attribute [r] redo_stack
+  # Collection of actions undone
+  # @return [Array]
+  attr_reader :redo_stack
+  
+  # !@attribute [r] text_marks
+  # Collection of named text marks used to track user input
+  # @return [Hash]
+  attr_reader :text_marks
 
   DEFAULT_LANG = "en_US"
   DEFAULT_TAGS = %w[bold italic strikethrough underline error spell_error]
@@ -11,9 +29,21 @@ class TextBuffer < Gtk::TextBuffer
   def initialize(tag_table=nil, options={})
     super(tag_table)
     @undo_stack, @redo_stack = [], []
-    @spell_check = Aspell.new(options[:lang] || DEFAULT_LANG)
+    
+    options[:lang] ||= DEFAULT_LANG
+    @spell_check = FFI::Aspell::Speller.new(options[:lang])
+    
     setup_default_tags
+    setup_text_marks
     setup_signals
+  end
+
+  # @param [Gtk::TextView]
+  def view=(text_view)
+    text_view.instance_eval do
+      signal_connect('button-press-event', &:__button_press_event)
+      signal_connect('populate-popup', &:__populate_popup)
+    end
   end
 
   # Pop the last action off the undo stack and rewind changes. If an action was
@@ -70,12 +100,66 @@ class TextBuffer < Gtk::TextBuffer
     [s_iter, e_iter]
   end
 
-  def check_spelling(word=nil, s_iter=nil, e_iter=nil)
-    if word.nil?
-      text.gsub(/[\w\']+/) do |w| check_spelling(w); end
-    elsif !@spell_check.check(word)
-      s, e = start_iter.forward_search(word, Gtk::TextIter::SEARCH_TEXT_ONLY, nil)
-      format(:spell_error, s, e)
+  # Helper method to check the spelling of every word in the buffer.
+  def check_spelling
+    check_range(*bounds)
+  end
+
+  # @param [Gtk::TextIter] s_iter
+  # @param [Gtk::TextIter] e_iter
+  def check_range(s_iter, e_iter)
+    e_iter.forward_word_end if e_iter.inside_word?
+    unless s_iter.starts_word?
+      if s_iter.inside_word? || s_iter.ends_word?
+        s_iter.backward_word_start
+      elsif s_iter.forward_word_end
+        s_iter.backward_word_start
+      end
+    end
+    # Get the iter at the current cursor position and the pre cursor.
+    c_iter  = get_iter_at_offset(cursor_position)
+    pc_iter = c_iter.clone
+    pc_iter.backward_char
+    
+    spell_error = tag_table.lookup('spell_error')
+    has_error = (c_iter.has_tag?(spell_error) || pc_iter.has_tag?(spell_error))
+    clear(:spell_error, s_iter, e_iter)
+    
+    # NOTE: From GtkSpell, catch rare cases when the replacement occurs at the
+    # beginning of the buffer.  An iter at offset 0 seems to always be inside a
+    # word even if it's not.
+    if get_iter_at_offset(0) == s_iter
+      s_iter.forward_word_end
+      s_iter.backward_word_start
+    end
+    
+    ws_iter = s_iter.clone # => Word start iter
+    while (ws_iter <=> e_iter) < 0 do
+      we_iter = ws_iter.clone  # => Word end iter
+      we_iter.forward_word_end
+      
+      if ((ws_iter <=> c_iter) < 0) && ((c_iter <=> we_iter) <= 0)
+        # The current word is being actively edited.  Only check it if it's
+        # already been identified as incorrect.  Else, check later.
+        check_word(ws_iter, we_iter) if has_error  
+      else
+        check_word(ws_iter, we_iter)
+      end
+      # Move the word end iter the the beginning of the next word.
+      we_iter.forward_word_end
+      we_iter.backward_word_start
+      break if we_iter == ws_iter
+
+      ws_iter = we_iter.clone
+    end
+  end
+
+  # @param [Gtk::TextIter] s_iter
+  # @param [Gtk::TextIter] e_iter
+  def check_word(s_iter, e_iter)
+    word = get_text(s_iter, e_iter)
+    unless @spell_check.correct?(word)
+      format(:spell_error, s_iter, e_iter)
     end
   end
 
@@ -177,6 +261,14 @@ class TextBuffer < Gtk::TextBuffer
       end
     end
 
+    def setup_text_marks
+      @text_marks = { 
+        insert_start: create_mark('insert_start', start_iter, true),
+        insert_end: create_mark('insert_end', start_iter, true),
+        click: create_mark('click', start_iter, true)
+      }
+    end
+
     # Establish base signal handlers.  Here we track user actions and...
     def setup_signals
       signal_connect('begin-user-action') { |me| @user_action = true  }
@@ -188,6 +280,13 @@ class TextBuffer < Gtk::TextBuffer
             (iter.offset + text.scan(/./).size), text]
           @redo_stack.clear
         end
+        move_mark(me.text_marks[:insert_start], iter) 
+      end
+
+      signal_connect_after('insert-text') do |me, iter, text, len|
+        s_iter = get_iter_at_mark(me.text_marks[:insert_start])
+        check_range(s_iter, iter)
+        move_mark(me.text_marks[:insert_end], iter)
       end
       
       signal_connect('delete-range') do |me, s_iter, e_iter|
@@ -197,14 +296,14 @@ class TextBuffer < Gtk::TextBuffer
         end
       end
 
-      # TODO: Add suggestion popups for spelling erros.
-      # tag_table.lookup('spell_error').signal_connect('event') do |tag|
-      # end
+      signal_connect_after('delete-range') do |me, s_iter, e_iter|
+        check_range(s_iter, e_iter)
+      end
     end
     
     def user_action?
       @user_action
     end
-
+    
 end
 end
