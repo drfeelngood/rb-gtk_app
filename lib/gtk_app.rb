@@ -41,4 +41,5 @@ module GtkApp
 
 end
 
+require 'gtk_app/ext/text_view'
 # require 'gtk_app/dialog'
