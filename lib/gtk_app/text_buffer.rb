@@ -25,13 +25,15 @@ class TextBuffer < Gtk::TextBuffer
 
   DEFAULT_LANG = "en_US"
   DEFAULT_TAGS = %w[bold italic strikethrough underline error spell_error]
+  DEFAULT_ENCODING = 'UTF-8'
 
   def initialize(tag_table=nil, options={})
     super(tag_table)
     @undo_stack, @redo_stack = [], []
     
     options[:lang] ||= DEFAULT_LANG
-    @spell_check = FFI::Aspell::Speller.new(options[:lang])
+    options[:encoding] ||= DEFAULT_ENCODING
+    @spell_check = FFI::Aspell::Speller.new(options[:lang], options)
     
     setup_default_tags
     setup_text_marks
